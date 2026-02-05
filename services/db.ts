@@ -61,8 +61,7 @@ export const dbService = {
     const updatePayload = dbService.toDbUser(user);
     const { error } = await supabase
       .from('users')
-      .update(updatePayload)
-      .eq('id', user.id);
+      .upsert(updatePayload, { onConflict: 'id' });
     if (error) {
       console.error('Error updating user', error);
       return false;
