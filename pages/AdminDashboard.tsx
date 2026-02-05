@@ -41,12 +41,13 @@ export const AdminDashboard: React.FC = () => {
             setAllUsers(Array.from(userMap.values()));
 
             // Load Posts
-            const dbPosts = await dbService.getPosts();
-            const localPosts = storageService.getPosts();
-            const postMap = new Map<string, Post>();
-            localPosts.forEach(p => postMap.set(p.id, p));
-            dbPosts.forEach(p => postMap.set(p.id, p));
-            setAllPosts(Array.from(postMap.values()).sort((a,b) => b.createdAt - a.createdAt));
+            try {
+                const dbPosts = await dbService.getPosts();
+                setAllPosts(dbPosts.sort((a,b) => b.createdAt - a.createdAt));
+            } catch (e) {
+                const localPosts = storageService.getPosts();
+                setAllPosts(localPosts.sort((a,b) => b.createdAt - a.createdAt));
+            }
 
         } catch (e) {
             console.error("Failed to load admin data", e);
@@ -71,10 +72,10 @@ export const AdminDashboard: React.FC = () => {
         loadData(); // Refresh
     };
 
-    const handleDeletePost = async (postId: string) => {
+    const handleDeletePost = async (postId: string, imageUrl?: string) => {
         if (!confirm("Are you sure you want to delete this content?")) return;
 
-        const dbDeleted = await dbService.deletePost(postId);
+        const dbDeleted = await dbService.deletePost(postId, imageUrl);
         if (!dbDeleted) {
             alert("Gagal menghapus konten di database. Pastikan RLS policy DELETE aktif.");
             return;
@@ -229,7 +230,7 @@ export const AdminDashboard: React.FC = () => {
                                 <img src={post.imageUrl} className="w-full h-full object-cover" alt="Post" />
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <button 
-                                        onClick={() => handleDeletePost(post.id)}
+                                        onClick={() => handleDeletePost(post.id, post.imageUrl)}
                                         className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transform hover:scale-110 transition-transform"
                                     >
                                         <Trash2 className="w-6 h-6" />

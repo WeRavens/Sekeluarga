@@ -169,7 +169,7 @@ export const dbService = {
 
     if (error) {
       console.error('Error fetching posts:', error);
-      return [];
+      throw error;
     }
 
     // Transform to our Front-end Post Model
@@ -216,7 +216,19 @@ export const dbService = {
     return true;
   },
 
-  deletePost: async (postId: string): Promise<boolean> => {
+  deletePost: async (postId: string, imageUrl?: string): Promise<boolean> => {
+    // Remove file from storage if it's our bucket URL
+    if (imageUrl) {
+      const path = dbService.getStoragePathFromUrl(imageUrl);
+      if (path) {
+        const { error: storageError } = await supabase.storage.from('images').remove([path]);
+        if (storageError) {
+          console.error('Error deleting image from storage', storageError);
+          // continue; we still attempt to delete post metadata
+        }
+      }
+    }
+
     const { error } = await supabase.from('posts').delete().eq('id', postId);
     if (error) {
       console.error('Error deleting post', error);
@@ -258,6 +270,17 @@ export const dbService = {
       created_at: comment.createdAt
     }]);
     if (error) console.error('Error adding comment:', error);
+  },
+
+  getStoragePathFromUrl: (url: string): string | null => {
+    try {
+      const marker = '/storage/v1/object/public/images/';
+      if (!url.includes(marker)) return null;
+      const path = url.split(marker)[1];
+      return path || null;
+    } catch {
+      return null;
+    }
   },
 
   // Storage (Image Upload)

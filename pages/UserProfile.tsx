@@ -56,13 +56,15 @@ export const UserProfile: React.FC = () => {
         }
 
         // Load posts (merge DB + local)
-        const dbPosts = await dbService.getPosts();
-        const localPosts = storageService.getPosts();
-        const postMap = new Map<string, Post>();
-        localPosts.forEach(p => postMap.set(p.id, p));
-        dbPosts.forEach(p => postMap.set(p.id, p));
-        const filteredPosts = Array.from(postMap.values()).filter(p => p.userId === user!.id);
-        setUserPosts(filteredPosts.sort((a, b) => b.createdAt - a.createdAt));
+        try {
+          const dbPosts = await dbService.getPosts();
+          const filteredPosts = dbPosts.filter(p => p.userId === user!.id);
+          setUserPosts(filteredPosts.sort((a, b) => b.createdAt - a.createdAt));
+        } catch (e) {
+          const localPosts = storageService.getPosts();
+          const filteredPosts = localPosts.filter(p => p.userId === user!.id);
+          setUserPosts(filteredPosts.sort((a, b) => b.createdAt - a.createdAt));
+        }
       }
     } catch (e) {
       console.error("Failed to load profile", e);

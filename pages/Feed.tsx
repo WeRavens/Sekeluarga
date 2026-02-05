@@ -16,17 +16,15 @@ export const Feed: React.FC = () => {
 
   useEffect(() => {
     const loadPosts = async () => {
-      // Try DB
-      let loadPosts = await dbService.getPosts();
-      
-      // Fallback
-      if (loadPosts.length === 0) {
-        loadPosts = storageService.getPosts();
+      try {
+        const dbPosts = await dbService.getPosts();
+        const sortedPosts = dbPosts.sort((a, b) => b.createdAt - a.createdAt);
+        setPosts(sortedPosts);
+      } catch (e) {
+        const localPosts = storageService.getPosts();
+        const sortedPosts = localPosts.sort((a, b) => b.createdAt - a.createdAt);
+        setPosts(sortedPosts);
       }
-      
-      // Sort by Date Descending
-      const sortedPosts = loadPosts.sort((a, b) => b.createdAt - a.createdAt);
-      setPosts(sortedPosts);
     }
     loadPosts();
   }, [refresh]);

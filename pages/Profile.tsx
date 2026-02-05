@@ -19,13 +19,15 @@ export const Profile: React.FC = () => {
     if (user) {
         const load = async () => {
             // Merge DB + local
-            const dbPosts = await dbService.getPosts();
-            const localPosts = storageService.getPosts();
-            const postMap = new Map<string, Post>();
-            localPosts.forEach(p => postMap.set(p.id, p));
-            dbPosts.forEach(p => postMap.set(p.id, p));
-            const myPosts = Array.from(postMap.values()).filter(p => p.userId === user.id);
-            setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+            try {
+              const dbPosts = await dbService.getPosts();
+              const myPosts = dbPosts.filter(p => p.userId === user.id);
+              setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+            } catch (e) {
+              const localPosts = storageService.getPosts();
+              const myPosts = localPosts.filter(p => p.userId === user.id);
+              setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+            }
         }
         load();
     }
@@ -178,13 +180,15 @@ export const Profile: React.FC = () => {
           onUpdate={() => {
             // refresh posts after like/comment in modal
             const load = async () => {
-              const dbPosts = await dbService.getPosts();
-              const localPosts = storageService.getPosts();
-              const postMap = new Map<string, Post>();
-              localPosts.forEach(p => postMap.set(p.id, p));
-              dbPosts.forEach(p => postMap.set(p.id, p));
-              const myPosts = Array.from(postMap.values()).filter(p => p.userId === user?.id);
-              setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+              try {
+                const dbPosts = await dbService.getPosts();
+                const myPosts = dbPosts.filter(p => p.userId === user?.id);
+                setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+              } catch (e) {
+                const localPosts = storageService.getPosts();
+                const myPosts = localPosts.filter(p => p.userId === user?.id);
+                setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+              }
             };
             load();
           }}
