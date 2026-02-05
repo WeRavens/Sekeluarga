@@ -32,15 +32,21 @@ export const AdminDashboard: React.FC = () => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            // Load Users
-            let users = await dbService.getUsers();
-            if (users.length === 0) users = storageService.getUsers();
-            setAllUsers(users);
+            // Load Users (merge DB + local, DB wins)
+            const dbUsers = await dbService.getUsers();
+            const localUsers = storageService.getUsers();
+            const userMap = new Map<string, User>();
+            localUsers.forEach(u => userMap.set(u.username, u));
+            dbUsers.forEach(u => userMap.set(u.username, u));
+            setAllUsers(Array.from(userMap.values()));
 
             // Load Posts
-            let posts = await dbService.getPosts();
-            if (posts.length === 0) posts = storageService.getPosts();
-            setAllPosts(posts.sort((a,b) => b.createdAt - a.createdAt));
+            const dbPosts = await dbService.getPosts();
+            const localPosts = storageService.getPosts();
+            const postMap = new Map<string, Post>();
+            localPosts.forEach(p => postMap.set(p.id, p));
+            dbPosts.forEach(p => postMap.set(p.id, p));
+            setAllPosts(Array.from(postMap.values()).sort((a,b) => b.createdAt - a.createdAt));
 
         } catch (e) {
             console.error("Failed to load admin data", e);
