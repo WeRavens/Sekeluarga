@@ -28,7 +28,7 @@ export const Stories: React.FC = () => {
     const otherUsers = users.filter(u => u.id !== currentUser?.id);
 
     return (
-        <div className="bg-white dark:bg-black border sm:border-gray-200 dark:border-gray-800 sm:rounded-lg mb-4 sm:mb-6 pt-4 pb-4 px-2 overflow-x-auto scrollbar-hide transition-colors">
+        <div className="bg-white/90 dark:bg-black/90 backdrop-blur border sm:border-gray-200 dark:border-gray-800 sm:rounded-2xl mb-4 sm:mb-6 pt-4 pb-4 px-2 overflow-x-auto scrollbar-hide transition-colors">
             <div className="flex gap-4 px-2">
                 {currentUser && (
                     <Link to="/profile" className="flex flex-col items-center gap-1 cursor-pointer flex-shrink-0 relative group">

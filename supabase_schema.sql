@@ -15,7 +15,7 @@ CREATE TABLE public.users (
 -- Create Posts Table
 CREATE TABLE public.posts (
     id TEXT PRIMARY KEY,
-    "userId" TEXT NOT NULL REFERENCES public.users(id),
+    "userId" TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     "imageUrl" TEXT NOT NULL,
     caption TEXT,
     created_at BIGINT NOT NULL -- We store timestamp as number to match existing app types

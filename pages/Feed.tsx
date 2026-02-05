@@ -40,7 +40,13 @@ export const Feed: React.FC = () => {
   return (
     <div className="flex justify-center gap-8">
       {/* Left/Main Column - Feed */}
-      <div className="w-full max-w-[470px] pb-20 sm:pb-0">
+      <div className="w-full max-w-[520px] pb-20 sm:pb-0">
+        <div className="px-1 sm:px-0">
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl font-serif italic tracking-wide dark:text-white">Moments</h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Berbagi cerita terbaik hari ini</p>
+          </div>
+        </div>
         <Stories />
         
         {posts.length === 0 ? (

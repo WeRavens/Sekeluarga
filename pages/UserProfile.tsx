@@ -6,6 +6,7 @@ import { dbService } from '../services/db';
 import { User, Post } from '../types';
 import { Grid, ArrowLeft, Loader2, UserCheck, UserPlus } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { PostModal } from '../components/PostModal';
 
 export const UserProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -17,6 +18,7 @@ export const UserProfile: React.FC = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [activePost, setActivePost] = useState<Post | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -121,7 +123,7 @@ export const UserProfile: React.FC = () => {
       </Link>
 
       {/* Profile Header */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sm:rounded-t-lg transition-colors">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sm:rounded-t-2xl transition-colors">
         <div className="flex-shrink-0">
           <img 
             src={profileUser.avatarUrl || `https://ui-avatars.com/api/?name=${profileUser.username}`} 
@@ -197,7 +199,7 @@ export const UserProfile: React.FC = () => {
 
       {/* Grid */}
       {userPosts.length === 0 ? (
-        <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-lg transition-colors">
+        <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
           <div className="w-16 h-16 border-2 border-gray-300 dark:border-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
              <Grid className="w-8 h-8 text-gray-400" />
           </div>
@@ -205,14 +207,14 @@ export const UserProfile: React.FC = () => {
           <p className="text-sm">This user hasn't shared any photos yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-lg transition-colors">
+        <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
           {userPosts.map(post => (
             <div key={post.id} className="relative aspect-square group cursor-pointer bg-gray-100 dark:bg-gray-800">
               <img 
                 src={post.imageUrl} 
                 alt={post.caption} 
                 className="w-full h-full object-cover"
-                onClick={() => setLightboxSrc(post.imageUrl)}
+                onClick={() => setActivePost(post)}
               />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center text-white font-bold gap-4">
                 <span>❤️ {post.likes.length}</span>
@@ -223,6 +225,15 @@ export const UserProfile: React.FC = () => {
         </div>
       )}
       <ImageLightbox src={lightboxSrc} alt="Profile image" onClose={() => setLightboxSrc(null)} />
+      {activePost && (
+        <PostModal
+          post={activePost}
+          relatedPosts={userPosts}
+          onClose={() => setActivePost(null)}
+          onUpdate={loadProfile}
+          onSelectPost={(p) => setActivePost(p)}
+        />
+      )}
     </div>
   );
 };

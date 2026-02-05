@@ -62,7 +62,11 @@ export const AdminDashboard: React.FC = () => {
         }
         if (!confirm("Are you sure you want to delete this user? This will remove all their posts.")) return;
 
-        await dbService.deleteUser(userId);
+        const dbDeleted = await dbService.deleteUser(userId);
+        if (!dbDeleted) {
+            alert("Gagal menghapus user di database. Pastikan RLS policy DELETE aktif dan tidak ada error.");
+            return;
+        }
         storageService.deleteUser(userId);
         loadData(); // Refresh
     };
@@ -70,7 +74,11 @@ export const AdminDashboard: React.FC = () => {
     const handleDeletePost = async (postId: string) => {
         if (!confirm("Are you sure you want to delete this content?")) return;
 
-        await dbService.deletePost(postId);
+        const dbDeleted = await dbService.deletePost(postId);
+        if (!dbDeleted) {
+            alert("Gagal menghapus konten di database. Pastikan RLS policy DELETE aktif.");
+            return;
+        }
         storageService.deletePost(postId);
         loadData(); // Refresh
     };

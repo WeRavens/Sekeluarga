@@ -5,12 +5,14 @@ import { dbService } from '../services/db';
 import { Post } from '../types';
 import { Grid, Tag, Bookmark, Edit2, Loader2, User as UserIcon } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { PostModal } from '../components/PostModal';
 
 export const Profile: React.FC = () => {
   const { user } = useAuth();
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [activePost, setActivePost] = useState<Post | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export const Profile: React.FC = () => {
   return (
     <div className="pb-20">
       {/* Profile Header */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sm:rounded-t-lg transition-colors">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sm:rounded-t-2xl transition-colors">
         <div className="relative group flex-shrink-0">
           <img 
             src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`} 
@@ -142,7 +144,7 @@ export const Profile: React.FC = () => {
 
       {/* Grid */}
       {userPosts.length === 0 ? (
-        <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-lg transition-colors">
+        <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
           <div className="w-16 h-16 border-2 border-black dark:border-white rounded-full flex items-center justify-center mx-auto mb-4">
              <Grid className="w-8 h-8 text-black dark:text-white" />
           </div>
@@ -150,14 +152,14 @@ export const Profile: React.FC = () => {
           <p className="text-sm">When you share photos, they will appear on your profile.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-lg transition-colors">
+        <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
           {userPosts.map(post => (
             <div key={post.id} className="relative aspect-square group cursor-pointer bg-gray-100">
               <img 
                 src={post.imageUrl} 
                 alt={post.caption} 
                 className="w-full h-full object-cover"
-                onClick={() => setLightboxSrc(post.imageUrl)}
+                onClick={() => setActivePost(post)}
               />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center text-white font-bold gap-4">
                 <span>❤️ {post.likes.length}</span>
@@ -168,6 +170,27 @@ export const Profile: React.FC = () => {
         </div>
       )}
       <ImageLightbox src={lightboxSrc} alt="Profile image" onClose={() => setLightboxSrc(null)} />
+      {activePost && (
+        <PostModal
+          post={activePost}
+          relatedPosts={userPosts}
+          onClose={() => setActivePost(null)}
+          onUpdate={() => {
+            // refresh posts after like/comment in modal
+            const load = async () => {
+              const dbPosts = await dbService.getPosts();
+              const localPosts = storageService.getPosts();
+              const postMap = new Map<string, Post>();
+              localPosts.forEach(p => postMap.set(p.id, p));
+              dbPosts.forEach(p => postMap.set(p.id, p));
+              const myPosts = Array.from(postMap.values()).filter(p => p.userId === user?.id);
+              setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+            };
+            load();
+          }}
+          onSelectPost={(p) => setActivePost(p)}
+        />
+      )}
     </div>
   );
 };

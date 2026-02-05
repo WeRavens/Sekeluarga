@@ -1,0 +1,183 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Heart, MessageCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Post, Comment } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { storageService } from '../services/storage';
+import { dbService } from '../services/db';
+
+interface PostModalProps {
+  post: Post;
+  relatedPosts: Post[];
+  onClose: () => void;
+  onUpdate: () => void;
+  onSelectPost: (post: Post) => void;
+}
+
+export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClose, onUpdate, onSelectPost }) => {
+  const { user } = useAuth();
+  const [commentText, setCommentText] = useState('');
+
+  const isLiked = user ? post.likes.includes(user.id) : false;
+
+  const handleLike = async () => {
+    if (!user) return;
+    try {
+      await dbService.toggleLike(post.id, user.id);
+    } catch (e) {
+      console.warn('DB Like failed, falling back to local only');
+    }
+    storageService.toggleLike(post.id, user.id);
+    onUpdate();
+  };
+
+  const handleComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !commentText.trim()) return;
+
+    const newComment: Comment = {
+      id: `c${Date.now()}`,
+      postId: post.id,
+      userId: user.id,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
+      text: commentText.trim(),
+      createdAt: Date.now(),
+    };
+
+    try {
+      await dbService.addComment(newComment);
+    } catch (e) {
+      console.warn('DB Comment failed');
+    }
+    storageService.addComment(post.id, newComment);
+
+    setCommentText('');
+    onUpdate();
+  };
+
+  const sortedRelated = relatedPosts.sort((a, b) => b.createdAt - a.createdAt);
+  const currentIndex = sortedRelated.findIndex(p => p.id === post.id);
+  const prevPost = currentIndex > 0 ? sortedRelated[currentIndex - 1] : null;
+  const nextPost = currentIndex >= 0 && currentIndex < sortedRelated.length - 1 ? sortedRelated[currentIndex + 1] : null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-6" onClick={onClose}>
+      <div className="w-full max-w-5xl bg-white dark:bg-black rounded-xl overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-3">
+            <img
+              src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}`}
+              alt={post.username}
+              className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+            />
+            <div>
+              <Link to={`/user/${post.username}`} className="font-semibold text-sm dark:text-white hover:underline">
+                {post.username}
+              </Link>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Post</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+            <X className="w-5 h-5 dark:text-white" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {/* Image */}
+          <div className="relative bg-black">
+            <img src={post.imageUrl} alt={post.caption} className="w-full h-full object-contain max-h-[70vh] bg-black" />
+            {prevPost && (
+              <button
+                onClick={() => onSelectPost(prevPost)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black rounded-full p-2 shadow"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+            {nextPost && (
+              <button
+                onClick={() => onSelectPost(nextPost)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-black rounded-full p-2 shadow"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="flex flex-col max-h-[70vh]">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-4 mb-3">
+                <button onClick={handleLike} className={`transition-transform active:scale-90 ${isLiked ? 'text-red-500' : 'text-black dark:text-white'}`}>
+                  <Heart className={`w-7 h-7 ${isLiked ? 'fill-current' : ''}`} />
+                </button>
+                <button className="text-black dark:text-white">
+                  <MessageCircle className="w-7 h-7" />
+                </button>
+              </div>
+              <div className="font-semibold text-sm dark:text-white">
+                {post.likes.length} {post.likes.length === 1 ? 'like' : 'likes'}
+              </div>
+              {post.caption && (
+                <div className="text-sm mt-2 dark:text-gray-200">
+                  <span className="font-semibold mr-2 dark:text-white">{post.username}</span>
+                  <span>{post.caption}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {post.comments.length === 0 && (
+                <div className="text-sm text-gray-500 dark:text-gray-400">No comments yet.</div>
+              )}
+              {post.comments.map(comment => (
+                <div key={comment.id} className="flex items-start gap-2 text-sm">
+                  <Link to={`/user/${comment.username}`} className="shrink-0">
+                    <img
+                      src={comment.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
+                      alt={comment.username}
+                      className="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                    />
+                  </Link>
+                  <div className="dark:text-gray-300">
+                    <Link to={`/user/${comment.username}`} className="font-semibold mr-2 dark:text-white hover:underline">
+                      {comment.username}
+                    </Link>
+                    <span className="text-gray-800 dark:text-gray-300">{comment.text}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleComment} className="p-4 border-t border-gray-100 dark:border-gray-800 flex gap-2">
+              <input
+                type="text"
+                placeholder="Add a comment..."
+                className="flex-1 text-sm outline-none bg-transparent dark:text-white placeholder:text-gray-400"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <button type="submit" disabled={!commentText.trim()} className="text-blue-500 font-semibold text-sm disabled:opacity-40">
+                Post
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {sortedRelated.length > 1 && (
+          <div className="p-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-xs uppercase text-gray-400 mb-2">More from this user</div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {sortedRelated.map(p => (
+                <button key={p.id} onClick={() => onSelectPost(p)} className={`relative h-16 w-16 rounded-md overflow-hidden border ${p.id === post.id ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`}>
+                  <img src={p.imageUrl} alt={p.caption} className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

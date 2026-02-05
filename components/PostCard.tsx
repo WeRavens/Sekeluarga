@@ -46,6 +46,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
       postId: post.id,
       userId: user.id,
       username: user.username,
+      avatarUrl: user.avatarUrl,
       text: commentText.trim(),
       createdAt: Date.now(),
     };
@@ -69,9 +70,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-black border sm:border-gray-200 dark:border-gray-800 sm:rounded-lg mb-4 sm:mb-8 overflow-hidden shadow-sm dark:shadow-none transition-colors">
+    <div className="bg-white dark:bg-black border sm:border-gray-200 dark:border-gray-800 sm:rounded-2xl mb-4 sm:mb-8 overflow-hidden shadow-sm hover:shadow-md transition-shadow dark:shadow-none transition-colors">
       {/* Header */}
-      <Link to={`/user/${post.username}`} className="p-3 flex items-center gap-3 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+      <Link to={`/user/${post.username}`} className="p-4 flex items-center gap-3 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
         <img 
           src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}`} 
           alt={post.username} 
@@ -97,7 +98,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
       </div>
 
       {/* Actions */}
-      <div className="p-3">
+      <div className="p-4">
         <div className="flex items-center gap-4 mb-2 dark:text-white">
           <button 
             onClick={handleLike} 
@@ -128,7 +129,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
               <div key={comment.id} className="flex items-start gap-2 text-sm">
                 <Link to={`/user/${comment.username}`} className="shrink-0">
                   <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
+                    src={comment.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
                     alt={comment.username}
                     className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                   />

@@ -161,7 +161,7 @@ export const dbService = {
         users:userId (username, avatarUrl),
         comments (
           id, text, userId, created_at,
-          users:userId (username)
+          users:userId (username, avatarUrl)
         ),
         post_likes (userId)
       `)
@@ -191,6 +191,7 @@ export const dbService = {
           postId: p.id,
           userId: c.userId,
           username: c.users?.username || 'Unknown',
+          avatarUrl: c.users?.avatarUrl,
           text: c.text,
           createdAt: Number(c.created_at)
         }))
