@@ -1,0 +1,7 @@
+{
+  "name": "FamGram",
+  "description": "A private, secure family photo sharing application to stay connected with loved ones.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
