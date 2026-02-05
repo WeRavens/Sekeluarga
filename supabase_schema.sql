@@ -169,12 +169,4 @@ CREATE POLICY "Public post tags are insertable by everyone" ON public.post_tags 
 DROP POLICY IF EXISTS "Public post tags are deletable by everyone" ON public.post_tags;
 CREATE POLICY "Public post tags are deletable by everyone" ON public.post_tags FOR DELETE USING (true);
 
--- Optional seed users (safe to re-run)
-INSERT INTO public.users (id, username, password, "fullName", "avatarUrl", bio, role)
-VALUES
-  ('admin', 'admin', 'adminpassword', 'Administrator', 'https://ui-avatars.com/api/?name=Admin&background=000000&color=ffffff', 'System Administrator', 'admin'),
-  ('u1', 'mom', 'password', 'Ibu', 'https://ui-avatars.com/api/?name=Ibu&background=e91e63&color=ffffff', 'Ibu dari keluarga ini', 'user'),
-  ('u2', 'dad', 'password', 'Ayah', 'https://ui-avatars.com/api/?name=Ayah&background=2196f3&color=ffffff', 'Kepala keluarga', 'user'),
-  ('u3', 'sister', 'password', 'Kakak', 'https://ui-avatars.com/api/?name=Kakak&background=9c27b0&color=ffffff', 'Anak pertama', 'user'),
-  ('u4', 'brother', 'password', 'Adik', 'https://ui-avatars.com/api/?name=Adik&background=ff9800&color=ffffff', 'Anak kedua', 'user')
-ON CONFLICT (id) DO NOTHING;
+-- No seed users (clean start)
