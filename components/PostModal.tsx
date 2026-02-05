@@ -100,6 +100,21 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
     }
   };
 
+  const handleUntag = async () => {
+    if (!user) return;
+    const username = prompt('Untag username:');
+    if (!username) return;
+    const target = await dbService.getUserByUsername(username);
+    if (!target) {
+      alert('User tidak ditemukan');
+      return;
+    }
+    const ok = await dbService.untagUserOnPost(post.id, target.id);
+    if (!ok) {
+      alert('Gagal menghapus tag');
+    }
+  };
+
   const handleShare = async () => {
     try {
       const shareData = {
@@ -149,16 +164,24 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
                 {(canDeletePost || isAdmin) && (
                   <button onClick={() => { setMenuOpen(false); handleDeletePost(); }} className="w-full flex items-center gap-2 p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30" title="Delete">
                     <Trash2 className="w-4 h-4" />
+                    <span className="text-sm">Hapus</span>
                   </button>
                 )}
-                <button onClick={handleSave} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Saved">
+                <button onClick={() => { setMenuOpen(false); handleSave(); }} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Saved">
                   <Bookmark className="w-4 h-4" />
+                  <span className="text-sm">Saved</span>
                 </button>
-                <button onClick={handleTag} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Tagged">
+                <button onClick={() => { setMenuOpen(false); handleTag(); }} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Tagged">
                   <Tag className="w-4 h-4" />
+                  <span className="text-sm">Tag</span>
                 </button>
-                <button onClick={handleShare} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Share">
+                <button onClick={() => { setMenuOpen(false); handleUntag(); }} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Untag">
+                  <Tag className="w-4 h-4" />
+                  <span className="text-sm">Untag</span>
+                </button>
+                <button onClick={() => { setMenuOpen(false); handleShare(); }} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Share">
                   <Share2 className="w-4 h-4" />
+                  <span className="text-sm">Share</span>
                 </button>
               </div>
             )}
