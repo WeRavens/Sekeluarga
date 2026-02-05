@@ -15,6 +15,28 @@ export const dbService = {
     return data || [];
   },
 
+  // Keep payloads aligned with DB columns and avoid undefined fields.
+  toDbUser: (user: User) => {
+    const payload: Partial<User> = {
+      id: user.id,
+      username: user.username,
+      password: user.password,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
+      bio: user.bio,
+      role: user.role || 'user',
+      followers: user.followers,
+      following: user.following,
+    };
+
+    Object.keys(payload).forEach((key) => {
+      const k = key as keyof typeof payload;
+      if (payload[k] === undefined) delete payload[k];
+    });
+
+    return payload;
+  },
+
   getUserById: async (id: string): Promise<User | null> => {
     const { data, error } = await supabase.from('users').select('*').eq('id', id).single();
     if (error) return null;
@@ -23,7 +45,7 @@ export const dbService = {
 
   createUser: async (user: User): Promise<boolean> => {
     // Ensure role exists in payload, default to user
-    const userWithRole = { ...user, role: user.role || 'user' };
+    const userWithRole = dbService.toDbUser({ ...user, role: user.role || 'user' });
     const { error } = await supabase.from('users').insert([userWithRole]);
     if (error) {
       console.error('Error creating user:', error);
@@ -33,12 +55,13 @@ export const dbService = {
   },
 
   updateUser: async (user: User): Promise<boolean> => {
-      const { error } = await supabase.from('users').update(user).eq('id', user.id);
-      if (error) {
-          console.error("Error updating user", error);
-          return false;
-      }
-      return true;
+    const updatePayload = dbService.toDbUser(user);
+    const { error } = await supabase.from('users').update(updatePayload).eq('id', user.id);
+    if (error) {
+      console.error("Error updating user", error);
+      return false;
+    }
+    return true;
   },
 
   deleteUser: async (userId: string): Promise<boolean> => {
@@ -67,10 +90,24 @@ export const dbService = {
     const targetFollowers = target.followers || [];
 
     if (!followerFollowing.includes(targetId)) {
-      await supabase.from('users').update({ following: [...followerFollowing, targetId] }).eq('id', followerId);
+      const { error } = await supabase
+        .from('users')
+        .update({ following: [...followerFollowing, targetId] })
+        .eq('id', followerId);
+      if (error) {
+        console.error("Error following user (following update)", error);
+        return false;
+      }
     }
     if (!targetFollowers.includes(followerId)) {
-      await supabase.from('users').update({ followers: [...targetFollowers, followerId] }).eq('id', targetId);
+      const { error } = await supabase
+        .from('users')
+        .update({ followers: [...targetFollowers, followerId] })
+        .eq('id', targetId);
+      if (error) {
+        console.error("Error following user (followers update)", error);
+        return false;
+      }
     }
     return true;
   },
@@ -84,8 +121,24 @@ export const dbService = {
     const followerFollowing = (follower.following || []).filter(id => id !== targetId);
     const targetFollowers = (target.followers || []).filter(id => id !== followerId);
 
-    await supabase.from('users').update({ following: followerFollowing }).eq('id', followerId);
-    await supabase.from('users').update({ followers: targetFollowers }).eq('id', targetId);
+    const { error: followerError } = await supabase
+      .from('users')
+      .update({ following: followerFollowing })
+      .eq('id', followerId);
+    if (followerError) {
+      console.error("Error unfollowing user (following update)", followerError);
+      return false;
+    }
+
+    const { error: targetError } = await supabase
+      .from('users')
+      .update({ followers: targetFollowers })
+      .eq('id', targetId);
+    if (targetError) {
+      console.error("Error unfollowing user (followers update)", targetError);
+      return false;
+    }
+
     return true;
   },
 
@@ -114,24 +167,29 @@ export const dbService = {
     }
 
     // Transform to our Front-end Post Model
-    return posts.map((p: any) => ({
-      id: p.id,
-      userId: p.userId,
-      username: p.users?.username || 'Unknown',
-      userAvatar: p.users?.avatarUrl,
-      imageUrl: p.imageUrl,
-      caption: p.caption,
-      createdAt: Number(p.created_at), // Convert BigInt/String to number
-      likes: p.post_likes.map((pl: any) => pl.userId),
-      comments: p.comments.map((c: any) => ({
-        id: c.id,
-        postId: p.id,
-        userId: c.userId,
-        username: c.users?.username || 'Unknown',
-        text: c.text,
-        createdAt: Number(c.created_at)
-      }))
-    }));
+    return posts.map((p: any) => {
+      const postLikes = Array.isArray(p.post_likes) ? p.post_likes : [];
+      const postComments = Array.isArray(p.comments) ? p.comments : [];
+
+      return {
+        id: p.id,
+        userId: p.userId,
+        username: p.users?.username || 'Unknown',
+        userAvatar: p.users?.avatarUrl,
+        imageUrl: p.imageUrl,
+        caption: p.caption,
+        createdAt: Number(p.created_at), // Convert BigInt/String to number
+        likes: postLikes.map((pl: any) => pl.userId),
+        comments: postComments.map((c: any) => ({
+          id: c.id,
+          postId: p.id,
+          userId: c.userId,
+          username: c.users?.username || 'Unknown',
+          text: c.text,
+          createdAt: Number(c.created_at)
+        }))
+      };
+    });
   },
 
   createPost: async (post: Post): Promise<boolean> => {
@@ -171,21 +229,24 @@ export const dbService = {
 
     if (data) {
       // Unlike
-      await supabase.from('post_likes').delete().eq('postId', postId).eq('userId', userId);
+      const { error } = await supabase.from('post_likes').delete().eq('postId', postId).eq('userId', userId);
+      if (error) console.error('Error unliking post:', error);
     } else {
       // Like
-      await supabase.from('post_likes').insert([{ postId, userId }]);
+      const { error } = await supabase.from('post_likes').insert([{ postId, userId }]);
+      if (error) console.error('Error liking post:', error);
     }
   },
 
   addComment: async (comment: Comment): Promise<void> => {
-    await supabase.from('comments').insert([{
+    const { error } = await supabase.from('comments').insert([{
       id: comment.id,
       postId: comment.postId,
       userId: comment.userId,
       text: comment.text,
       created_at: comment.createdAt
     }]);
+    if (error) console.error('Error adding comment:', error);
   },
   
   // Storage (Image Upload)

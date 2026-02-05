@@ -7,12 +7,12 @@ const CURRENT_USER_KEY = 'famgram_v4_current_user';
 // Seed data to make the app look alive initially
 const SEED_USERS: User[] = [
   { id: 'u0', username: 'admin', password: 'adminpassword', fullName: 'Super Admin', bio: 'System Administrator', role: 'admin' },
-  { id: 'u1', username: 'mom', password: 'password', fullName: 'Mom', bio: 'Love my family! ❤️', avatarUrl: 'https://picsum.photos/id/64/200/200', role: 'user' },
+  { id: 'u1', username: 'mom', password: 'password', fullName: 'Mom', bio: 'Love my family!', avatarUrl: 'https://picsum.photos/id/64/200/200', role: 'user' },
   { id: 'u2', username: 'dad', password: 'password', fullName: 'Dad', bio: 'Grilling enthusiast.', avatarUrl: 'https://picsum.photos/id/65/200/200', role: 'user' },
-  { id: 'u3', username: 'alice', password: 'password', fullName: 'Alice', bio: 'Student 🎓', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', role: 'user' },
-  { id: 'u4', username: 'uncle_bob', password: 'password', fullName: 'Uncle Bob', bio: 'Fishing and Camping 🎣', avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop', role: 'user' },
-  { id: 'u5', username: 'sarah_art', password: 'password', fullName: 'Sarah Design', bio: 'Digital Artist 🎨', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop', role: 'user' },
-  { id: 'u6', username: 'max_dog', password: 'password', fullName: 'Max the Dog', bio: 'Woof! 🐕', avatarUrl: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&h=200&fit=crop', role: 'user' },
+  { id: 'u3', username: 'alice', password: 'password', fullName: 'Alice', bio: 'Student', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop', role: 'user' },
+  { id: 'u4', username: 'uncle_bob', password: 'password', fullName: 'Uncle Bob', bio: 'Fishing and Camping', avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop', role: 'user' },
+  { id: 'u5', username: 'sarah_art', password: 'password', fullName: 'Sarah Design', bio: 'Digital Artist', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop', role: 'user' },
+  { id: 'u6', username: 'max_dog', password: 'password', fullName: 'Max the Dog', bio: 'Woof!', avatarUrl: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=200&h=200&fit=crop', role: 'user' },
 ];
 
 const SEED_POSTS: Post[] = [
@@ -22,7 +22,7 @@ const SEED_POSTS: Post[] = [
     username: 'mom',
     userAvatar: 'https://picsum.photos/id/64/200/200',
     imageUrl: 'https://picsum.photos/id/1025/600/600',
-    caption: 'Our furry friend relaxing in the garden 🐶',
+    caption: 'Our furry friend relaxing in the garden',
     likes: ['u2', 'u3'],
     comments: [
       { id: 'c1', postId: 'p1', userId: 'u3', username: 'alice', text: 'So cute!', createdAt: Date.now() - 100000 },
@@ -35,7 +35,7 @@ const SEED_POSTS: Post[] = [
     username: 'dad',
     userAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop',
     imageUrl: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&h=800&fit=crop', // Coffee
-    caption: 'Making coffee this morning. Who wants some? ☕️',
+    caption: 'Making coffee this morning. Who wants some?',
     likes: ['u1', 'u3', 'u4'],
     comments: [],
     createdAt: Date.now() - 3600000,
@@ -46,10 +46,10 @@ const SEED_POSTS: Post[] = [
     username: 'sarah_art',
     userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop',
     imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&h=800&fit=crop', // Art
-    caption: 'Just finished this new piece! What do you think? 🎨',
+    caption: 'Just finished this new piece! What do you think?',
     likes: ['u1', 'u2', 'u3'],
     comments: [
-      { id: 'c2', postId: 'p3', userId: 'u1', username: 'mom', text: 'Beautiful! ❤️', createdAt: Date.now() - 1000000 },
+      { id: 'c2', postId: 'p3', userId: 'u1', username: 'mom', text: 'Beautiful!', createdAt: Date.now() - 1000000 },
     ],
     createdAt: Date.now() - 7200000,
   },
@@ -59,7 +59,7 @@ const SEED_POSTS: Post[] = [
     username: 'uncle_bob',
     userAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop',
     imageUrl: 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800&h=800&fit=crop', // Nature
-    caption: 'Great weekend trip! 🌲',
+    caption: 'Great weekend trip!',
     likes: ['u2'],
     comments: [],
     createdAt: Date.now() - 10800000,
@@ -104,7 +104,7 @@ export const storageService = {
     // Also update current session if it's the same user
     const currentUser = storageService.getCurrentUser();
     if (currentUser && currentUser.id === updatedUser.id) {
-        storageService.setCurrentUser(updatedUser);
+      storageService.setCurrentUser(updatedUser);
     }
   },
 
@@ -171,9 +171,9 @@ export const storageService = {
   },
 
   deletePost: (postId: string): void => {
-      let posts = storageService.getPosts();
-      posts = posts.filter(p => p.id !== postId);
-      localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+    let posts = storageService.getPosts();
+    posts = posts.filter(p => p.id !== postId);
+    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
   },
 
   toggleLike: (postId: string, userId: string): Post[] => {
