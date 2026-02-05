@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, Trash2, MoreHorizontal, Bookmark, Tag, Share2 } from 'lucide-react';
 import { Post, Comment } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
@@ -18,9 +18,11 @@ interface PostModalProps {
 export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClose, onUpdate, onSelectPost }) => {
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isLiked = user ? post.likes.includes(user.id) : false;
   const canDeletePost = user?.id === post.userId;
+  const isAdmin = user?.role === 'admin';
 
   const handleLike = async () => {
     if (!user) return;
@@ -59,7 +61,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
   };
 
   const handleDeletePost = async () => {
-    if (!user || !canDeletePost) return;
+    if (!user || (!canDeletePost && !isAdmin)) return;
     if (!confirm('Hapus postingan ini?')) return;
     const deleted = await dbService.deletePost(post.id, post.imageUrl);
     if (deleted) {
@@ -70,7 +72,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
   };
 
   const handleDeleteComment = async (commentId: string, commentUserId: string) => {
-    if (!user || user.id !== commentUserId) return;
+    if (!user || (!isAdmin && user.id !== commentUserId)) return;
     const ok = await dbService.deleteComment(commentId);
     if (ok) {
       storageService.deleteComment(commentId);
@@ -100,11 +102,27 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
               <div className="text-xs text-gray-500 dark:text-gray-400">Post</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {canDeletePost && (
-              <button onClick={handleDeletePost} className="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30">
-                <Trash2 className="w-5 h-5" />
-              </button>
+          <div className="flex items-center gap-2 relative">
+            <button onClick={() => setMenuOpen((v) => !v)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+              <MoreHorizontal className="w-5 h-5 dark:text-white" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-10 w-40 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-black shadow-lg p-2 z-20">
+                {(canDeletePost || isAdmin) && (
+                  <button onClick={() => { setMenuOpen(false); handleDeletePost(); }} className="w-full flex items-center gap-2 p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30" title="Delete">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Saved">
+                  <Bookmark className="w-4 h-4" />
+                </button>
+                <button className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Tagged">
+                  <Tag className="w-4 h-4" />
+                </button>
+                <button className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Share">
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </div>
             )}
             <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
               <X className="w-5 h-5 dark:text-white" />
@@ -175,7 +193,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
                     </Link>
                     <span className="text-gray-800 dark:text-gray-300">{comment.text}</span>
                   </div>
-                  {user?.id === comment.userId && (
+                  {(user?.id === comment.userId || isAdmin) && (
                     <button
                       onClick={() => handleDeleteComment(comment.id, comment.userId)}
                       className="opacity-70 group-hover:opacity-100 text-red-500 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30"
