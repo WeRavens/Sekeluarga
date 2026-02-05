@@ -219,6 +219,15 @@ export const storageService = {
     return posts;
   },
 
+  deleteComment: (commentId: string): void => {
+    const posts = storageService.getPosts();
+    const updatedPosts = posts.map(p => ({
+      ...p,
+      comments: p.comments.filter(c => c.id !== commentId),
+    }));
+    localStorage.setItem(POSTS_KEY, JSON.stringify(updatedPosts));
+  },
+
   // Session Management
   getCurrentUser: (): User | null => {
     const stored = localStorage.getItem(CURRENT_USER_KEY);

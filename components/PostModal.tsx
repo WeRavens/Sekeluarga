@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Post, Comment } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
@@ -20,6 +20,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
   const [commentText, setCommentText] = useState('');
 
   const isLiked = user ? post.likes.includes(user.id) : false;
+  const canDeletePost = user?.id === post.userId;
 
   const handleLike = async () => {
     if (!user) return;
@@ -57,6 +58,26 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
     onUpdate();
   };
 
+  const handleDeletePost = async () => {
+    if (!user || !canDeletePost) return;
+    if (!confirm('Hapus postingan ini?')) return;
+    const deleted = await dbService.deletePost(post.id, post.imageUrl);
+    if (deleted) {
+      storageService.deletePost(post.id);
+      onUpdate();
+      onClose();
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string, commentUserId: string) => {
+    if (!user || user.id !== commentUserId) return;
+    const ok = await dbService.deleteComment(commentId);
+    if (ok) {
+      storageService.deleteComment(commentId);
+      onUpdate();
+    }
+  };
+
   const sortedRelated = relatedPosts.sort((a, b) => b.createdAt - a.createdAt);
   const currentIndex = sortedRelated.findIndex(p => p.id === post.id);
   const prevPost = currentIndex > 0 ? sortedRelated[currentIndex - 1] : null;
@@ -79,15 +100,22 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
               <div className="text-xs text-gray-500 dark:text-gray-400">Post</div>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
-            <X className="w-5 h-5 dark:text-white" />
-          </button>
+          <div className="flex items-center gap-2">
+            {canDeletePost && (
+              <button onClick={handleDeletePost} className="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30">
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900">
+              <X className="w-5 h-5 dark:text-white" />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2">
           {/* Image */}
           <div className="relative bg-black">
-            <img src={post.imageUrl} alt={post.caption} className="w-full h-full object-contain max-h-[70vh] bg-black" />
+            <img src={post.imageUrl} alt={post.caption} className="w-full h-auto object-contain max-h-[60vh] lg:max-h-[70vh] bg-black" />
             {prevPost && (
               <button
                 onClick={() => onSelectPost(prevPost)}
@@ -107,7 +135,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
           </div>
 
           {/* Details */}
-          <div className="flex flex-col max-h-[70vh]">
+          <div className="flex flex-col max-h-none lg:max-h-[70vh]">
             <div className="p-4 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-4 mb-3">
                 <button onClick={handleLike} className={`transition-transform active:scale-90 ${isLiked ? 'text-red-500' : 'text-black dark:text-white'}`}>
@@ -128,12 +156,12 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 p-4 space-y-3 lg:overflow-y-auto">
               {post.comments.length === 0 && (
                 <div className="text-sm text-gray-500 dark:text-gray-400">No comments yet.</div>
               )}
               {post.comments.map(comment => (
-                <div key={comment.id} className="flex items-start gap-2 text-sm">
+                <div key={comment.id} className="flex items-start gap-2 text-sm group">
                   <Link to={`/user/${comment.username}`} className="shrink-0">
                     <img
                       src={withCacheBuster(comment.avatarUrl) || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
@@ -141,12 +169,21 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
                       className="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                     />
                   </Link>
-                  <div className="dark:text-gray-300">
+                  <div className="dark:text-gray-300 flex-1">
                     <Link to={`/user/${comment.username}`} className="font-semibold mr-2 dark:text-white hover:underline">
                       {comment.username}
                     </Link>
                     <span className="text-gray-800 dark:text-gray-300">{comment.text}</span>
                   </div>
+                  {user?.id === comment.userId && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id, comment.userId)}
+                      className="opacity-70 group-hover:opacity-100 text-red-500 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30"
+                      title="Delete comment"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

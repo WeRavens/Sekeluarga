@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Send } from 'lucide-react';
+import { Heart, MessageCircle, Send, Trash2 } from 'lucide-react';
 import { Post, Comment } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
@@ -20,6 +20,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const isLiked = user ? post.likes.includes(user.id) : false;
+  const canDeletePost = user?.id === post.userId;
 
   const handleLike = async () => {
     if (!user) return;
@@ -63,6 +64,25 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
     onUpdate();
   };
 
+  const handleDeletePost = async () => {
+    if (!user || !canDeletePost) return;
+    if (!confirm('Hapus postingan ini?')) return;
+    const deleted = await dbService.deletePost(post.id, post.imageUrl);
+    if (deleted) {
+      storageService.deletePost(post.id);
+      onUpdate();
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string, commentUserId: string) => {
+    if (!user || user.id !== commentUserId) return;
+    const ok = await dbService.deleteComment(commentId);
+    if (ok) {
+      storageService.deleteComment(commentId);
+      onUpdate();
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {
       month: 'short',
@@ -73,21 +93,32 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   return (
     <div className="bg-white dark:bg-black border sm:border-gray-200 dark:border-gray-800 sm:rounded-2xl mb-4 sm:mb-8 overflow-hidden shadow-sm hover:shadow-md transition-shadow dark:shadow-none transition-colors">
       {/* Header */}
-      <Link to={`/user/${post.username}`} className="p-4 flex items-center gap-3 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
-        <img 
-          src={withCacheBuster(post.userAvatar) || `https://ui-avatars.com/api/?name=${post.username}`} 
-          alt={post.username} 
-          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
-        />
-        <span className="font-semibold text-sm">{post.username}</span>
-      </Link>
+      <div className="p-4 flex items-center justify-between gap-3 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+        <Link to={`/user/${post.username}`} className="flex items-center gap-3">
+          <img 
+            src={withCacheBuster(post.userAvatar) || `https://ui-avatars.com/api/?name=${post.username}`} 
+            alt={post.username} 
+            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
+          />
+          <span className="font-semibold text-sm">{post.username}</span>
+        </Link>
+        {canDeletePost && (
+          <button
+            onClick={handleDeletePost}
+            className="p-2 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+            title="Delete post"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {/* Image */}
-      <div className="relative aspect-square bg-gray-100 dark:bg-gray-800" onDoubleClick={handleLike}>
+      <div className="relative bg-black" onDoubleClick={handleLike}>
         <img
           src={post.imageUrl}
           alt="Post"
-          className="w-full h-full object-cover cursor-zoom-in"
+          className="w-full h-auto max-h-[75vh] object-contain bg-black cursor-zoom-in"
           loading="lazy"
           onClick={() => setLightboxSrc(post.imageUrl)}
         />
@@ -127,7 +158,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
         {post.comments.length > 0 && (
           <div className="mt-2 space-y-2">
             {post.comments.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-2 text-sm">
+              <div key={comment.id} className="flex items-start gap-2 text-sm group">
                 <Link to={`/user/${comment.username}`} className="shrink-0">
                   <img
                     src={withCacheBuster(comment.avatarUrl) || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
@@ -135,12 +166,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
                     className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                   />
                 </Link>
-                <div className="dark:text-gray-300">
+                <div className="dark:text-gray-300 flex-1">
                   <Link to={`/user/${comment.username}`} className="font-semibold mr-2 dark:text-white hover:underline">
                     {comment.username}
                   </Link>
                   <span className="text-gray-800 dark:text-gray-300">{comment.text}</span>
                 </div>
+                {user?.id === comment.userId && (
+                  <button
+                    onClick={() => handleDeleteComment(comment.id, comment.userId)}
+                    className="opacity-70 group-hover:opacity-100 text-red-500 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30"
+                    title="Delete comment"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

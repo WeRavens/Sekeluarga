@@ -274,6 +274,15 @@ export const dbService = {
     if (error) console.error('Error adding comment:', error);
   },
 
+  deleteComment: async (commentId: string): Promise<boolean> => {
+    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+    if (error) {
+      console.error('Error deleting comment:', error);
+      return false;
+    }
+    return true;
+  },
+
   getStoragePathFromUrl: (url: string): string | null => {
     try {
       const marker = '/storage/v1/object/public/images/';
