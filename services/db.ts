@@ -221,7 +221,7 @@ export const dbService = {
         users!posts_userId_fkey (username, avatarUrl),
         comments!comments_postId_fkey (
           id, text, userId, created_at,
-          users:userId (username, avatarUrl)
+          users!comments_userId_fkey (username, avatarUrl)
         ),
         post_likes!post_likes_postId_fkey (userId)
       `)
