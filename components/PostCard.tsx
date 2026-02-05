@@ -5,6 +5,7 @@ import { Post, Comment } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
+import { ImageLightbox } from './ImageLightbox';
 
 interface PostCardProps {
   post: Post;
@@ -15,6 +16,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [isLikeAnimating, setIsLikeAnimating] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const isLiked = user ? post.likes.includes(user.id) : false;
 
@@ -80,7 +82,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
 
       {/* Image */}
       <div className="relative aspect-square bg-gray-100 dark:bg-gray-800" onDoubleClick={handleLike}>
-        <img src={post.imageUrl} alt="Post" className="w-full h-full object-cover" loading="lazy" />
+        <img
+          src={post.imageUrl}
+          alt="Post"
+          className="w-full h-full object-cover cursor-zoom-in"
+          loading="lazy"
+          onClick={() => setLightboxSrc(post.imageUrl)}
+        />
         {isLikeAnimating && (
            <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-bounce">
              <Heart className="w-24 h-24 text-white fill-white opacity-80" />
@@ -115,11 +123,22 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
 
         {/* Comments */}
         {post.comments.length > 0 && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-2 space-y-2">
             {post.comments.map((comment) => (
-              <div key={comment.id} className="text-sm dark:text-gray-300">
-                <span className="font-semibold mr-2 dark:text-white">{comment.username}</span>
-                <span className="text-gray-800 dark:text-gray-300">{comment.text}</span>
+              <div key={comment.id} className="flex items-start gap-2 text-sm">
+                <Link to={`/user/${comment.username}`} className="shrink-0">
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
+                    alt={comment.username}
+                    className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                  />
+                </Link>
+                <div className="dark:text-gray-300">
+                  <Link to={`/user/${comment.username}`} className="font-semibold mr-2 dark:text-white hover:underline">
+                    {comment.username}
+                  </Link>
+                  <span className="text-gray-800 dark:text-gray-300">{comment.text}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -148,6 +167,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
           </button>
         </form>
       </div>
+      <ImageLightbox src={lightboxSrc} alt={post.caption || 'Post image'} onClose={() => setLightboxSrc(null)} />
     </div>
   );
 };

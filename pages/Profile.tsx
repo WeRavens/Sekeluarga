@@ -4,22 +4,25 @@ import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
 import { Post } from '../types';
 import { Grid, Tag, Bookmark, Edit2, Loader2, User as UserIcon } from 'lucide-react';
+import { ImageLightbox } from '../components/ImageLightbox';
 
 export const Profile: React.FC = () => {
   const { user } = useAuth();
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
         const load = async () => {
-            // Priority to DB
-            let loadedPosts = await dbService.getPosts();
-            if (loadedPosts.length === 0) {
-                 loadedPosts = storageService.getPosts();
-            }
-            const myPosts = loadedPosts.filter(p => p.userId === user.id);
+            // Merge DB + local
+            const dbPosts = await dbService.getPosts();
+            const localPosts = storageService.getPosts();
+            const postMap = new Map<string, Post>();
+            localPosts.forEach(p => postMap.set(p.id, p));
+            dbPosts.forEach(p => postMap.set(p.id, p));
+            const myPosts = Array.from(postMap.values()).filter(p => p.userId === user.id);
             setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
         }
         load();
@@ -73,7 +76,8 @@ export const Profile: React.FC = () => {
           <img 
             src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`} 
             alt={user.fullName} 
-            className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 p-1 object-cover"
+            className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 p-1 object-cover cursor-zoom-in"
+            onClick={() => setLightboxSrc(user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`)}
           />
           <button 
              onClick={() => fileInputRef.current?.click()}
@@ -153,6 +157,7 @@ export const Profile: React.FC = () => {
                 src={post.imageUrl} 
                 alt={post.caption} 
                 className="w-full h-full object-cover"
+                onClick={() => setLightboxSrc(post.imageUrl)}
               />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center text-white font-bold gap-4">
                 <span>❤️ {post.likes.length}</span>
@@ -162,6 +167,7 @@ export const Profile: React.FC = () => {
           ))}
         </div>
       )}
+      <ImageLightbox src={lightboxSrc} alt="Profile image" onClose={() => setLightboxSrc(null)} />
     </div>
   );
 };

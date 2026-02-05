@@ -6,7 +6,7 @@ import { dbService } from '../services/db';
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<boolean>;
-  signup: (username: string, password: string, fullName: string) => Promise<boolean>;
+  signup: (username: string, password: string, fullName: string) => Promise<{ ok: boolean; reason?: 'exists' | 'db' }>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -70,13 +70,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return false;
   };
 
-  const signup = async (username: string, password: string, fullName: string): Promise<boolean> => {
+  const signup = async (username: string, password: string, fullName: string): Promise<{ ok: boolean; reason?: 'exists' | 'db' }> => {
     // Check DB for existing user
     let users = await dbService.getUsers();
     if (users.length === 0) users = storageService.getUsers();
 
     if (users.some(u => u.username === username)) {
-      return false; // User exists
+      return { ok: false, reason: 'exists' }; // User exists
     }
 
     const newUser: User = {
@@ -89,12 +89,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     // Save to both DB and Local
-    await dbService.createUser(newUser); 
+    const dbSuccess = await dbService.createUser(newUser); 
+    if (!dbSuccess) {
+      console.error("Gagal menyimpan user ke Database Supabase. Pastikan tabel 'users' sudah dibuat dan RLS Policy sudah di-set.");
+      return { ok: false, reason: 'db' }; 
+    }
+
     storageService.createUser(newUser);
     
     setUser(newUser);
     storageService.setCurrentUser(newUser);
-    return true;
+    return { ok: true };
   };
 
   const logout = () => {

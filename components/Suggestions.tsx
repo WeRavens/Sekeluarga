@@ -17,17 +17,21 @@ export const Suggestions: React.FC = () => {
     const loadSuggestions = async () => {
         if (!currentUser) return;
 
-        let users = await dbService.getUsers();
-        if (users.length === 0) {
-            users = storageService.getUsers();
-        }
+        const dbUsers = await dbService.getUsers();
+        const localUsers = storageService.getUsers();
+
+        const userMap = new Map<string, User>();
+        localUsers.forEach(u => userMap.set(u.username, u));
+        dbUsers.forEach(u => userMap.set(u.username, u));
+        const users = Array.from(userMap.values());
 
         // Filter out current user and get suggestions
         const otherUsers = users.filter(u => u.id !== currentUser.id).slice(0, 5);
         setSuggestions(otherUsers);
 
         // Set initial following state
-        const following = currentUser.following || [];
+        const sessionUser = storageService.getCurrentUser() || currentUser;
+        const following = sessionUser.following || [];
         const initialFollowState: {[key: string]: boolean} = {};
         otherUsers.forEach(u => {
             initialFollowState[u.id] = following.includes(u.id);
@@ -90,7 +94,7 @@ export const Suggestions: React.FC = () => {
                      <div key={u.id} className="flex items-center justify-between">
                          <div className="flex items-center gap-3">
                              <Link to={`/user/${u.username}`}>
-                                <img src={u.avatarUrl} className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-gray-700" alt={u.username} />
+                                <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.username}`} className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-gray-700" alt={u.username} />
                              </Link>
                              <div>
                                  <Link to={`/user/${u.username}`} className="font-semibold text-sm hover:underline cursor-pointer dark:text-gray-100">{u.username}</Link>

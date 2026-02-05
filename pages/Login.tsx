@@ -28,8 +28,15 @@ export const Login: React.FC = () => {
       success = await login(username, password);
       if (!success) setError('Invalid credentials');
     } else {
-      success = await signup(username, password, fullName);
-      if (!success) setError('Username already taken');
+      const result = await signup(username, password, fullName);
+      success = result.ok;
+      if (!success) {
+        if (result.reason === 'exists') {
+          setError('Username sudah digunakan');
+        } else {
+          setError('Gagal daftar. Cek koneksi Supabase atau policy RLS.');
+        }
+      }
     }
   };
 

@@ -5,6 +5,7 @@ import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
 import { User, Post } from '../types';
 import { Grid, ArrowLeft, Loader2, UserCheck, UserPlus } from 'lucide-react';
+import { ImageLightbox } from '../components/ImageLightbox';
 
 export const UserProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -15,6 +16,7 @@ export const UserProfile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -25,27 +27,39 @@ export const UserProfile: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Try DB first
-      let user = await dbService.getUserByUsername(username);
-      if (!user) {
-        user = storageService.getUserByUsername(username) || null;
+      // Try DB + local and merge (DB wins, but keep followers/following union)
+      const dbUser = await dbService.getUserByUsername(username);
+      const localUser = storageService.getUserByUsername(username) || null;
+
+      let user: User | null = null;
+      if (dbUser || localUser) {
+        const followers = Array.from(new Set([...(localUser?.followers || []), ...(dbUser?.followers || [])]));
+        const following = Array.from(new Set([...(localUser?.following || []), ...(dbUser?.following || [])]));
+        user = {
+          ...(localUser || {}),
+          ...(dbUser || {}),
+          followers,
+          following,
+        } as User;
       }
 
       if (user) {
         setProfileUser(user);
         
         // Check if current user follows this profile
-        if (currentUser) {
-          const following = currentUser.following || [];
+        const sessionUser = storageService.getCurrentUser() || currentUser;
+        if (sessionUser) {
+          const following = sessionUser.following || [];
           setIsFollowing(following.includes(user.id));
         }
 
-        // Load posts
-        let posts = await dbService.getPosts();
-        if (posts.length === 0) {
-          posts = storageService.getPosts();
-        }
-        const filteredPosts = posts.filter(p => p.userId === user!.id);
+        // Load posts (merge DB + local)
+        const dbPosts = await dbService.getPosts();
+        const localPosts = storageService.getPosts();
+        const postMap = new Map<string, Post>();
+        localPosts.forEach(p => postMap.set(p.id, p));
+        dbPosts.forEach(p => postMap.set(p.id, p));
+        const filteredPosts = Array.from(postMap.values()).filter(p => p.userId === user!.id);
         setUserPosts(filteredPosts.sort((a, b) => b.createdAt - a.createdAt));
       }
     } catch (e) {
@@ -112,7 +126,8 @@ export const UserProfile: React.FC = () => {
           <img 
             src={profileUser.avatarUrl || `https://ui-avatars.com/api/?name=${profileUser.username}`} 
             alt={profileUser.fullName} 
-            className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 p-1 object-cover"
+            className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 p-1 object-cover cursor-zoom-in"
+            onClick={() => setLightboxSrc(profileUser.avatarUrl || `https://ui-avatars.com/api/?name=${profileUser.username}`)}
           />
         </div>
         
@@ -197,6 +212,7 @@ export const UserProfile: React.FC = () => {
                 src={post.imageUrl} 
                 alt={post.caption} 
                 className="w-full h-full object-cover"
+                onClick={() => setLightboxSrc(post.imageUrl)}
               />
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center text-white font-bold gap-4">
                 <span>❤️ {post.likes.length}</span>
@@ -206,6 +222,7 @@ export const UserProfile: React.FC = () => {
           ))}
         </div>
       )}
+      <ImageLightbox src={lightboxSrc} alt="Profile image" onClose={() => setLightboxSrc(null)} />
     </div>
   );
 };

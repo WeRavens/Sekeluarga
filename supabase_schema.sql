@@ -6,6 +6,9 @@ CREATE TABLE public.users (
     "fullName" TEXT NOT NULL,
     "avatarUrl" TEXT,
     bio TEXT,
+    role TEXT DEFAULT 'user' NOT NULL,
+    followers TEXT[] DEFAULT '{}' NOT NULL,
+    following TEXT[] DEFAULT '{}' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -43,13 +46,17 @@ ALTER TABLE public.post_likes ENABLE ROW LEVEL SECURITY;
 -- Allow public access for this demo (Simulating the open nature of the previous local storage)
 CREATE POLICY "Public profiles are viewable by everyone" ON public.users FOR SELECT USING (true);
 CREATE POLICY "Public profiles are insertable by everyone" ON public.users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public profiles are updateable by everyone" ON public.users FOR UPDATE USING (true);
+CREATE POLICY "Public profiles are deletable by everyone" ON public.users FOR DELETE USING (true);
 
 CREATE POLICY "Public posts are viewable by everyone" ON public.posts FOR SELECT USING (true);
 CREATE POLICY "Public posts are insertable by everyone" ON public.posts FOR INSERT WITH CHECK (true); 
 CREATE POLICY "Public posts are updateable by everyone" ON public.posts FOR UPDATE USING (true); 
+CREATE POLICY "Public posts are deletable by everyone" ON public.posts FOR DELETE USING (true);
 
 CREATE POLICY "Public comments are viewable by everyone" ON public.comments FOR SELECT USING (true);
 CREATE POLICY "Public comments are insertable by everyone" ON public.comments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public comments are deletable by everyone" ON public.comments FOR DELETE USING (true);
 
 CREATE POLICY "Public likes are viewable by everyone" ON public.post_likes FOR SELECT USING (true);
 CREATE POLICY "Public likes are insertable by everyone" ON public.post_likes FOR INSERT WITH CHECK (true);
