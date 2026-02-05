@@ -61,19 +61,19 @@ export const dbService = {
     const updatePayload = dbService.toDbUser(user);
     const { error } = await supabase.from('users').update(updatePayload).eq('id', user.id);
     if (error) {
-      console.error("Error updating user", error);
+      console.error('Error updating user', error);
       return false;
     }
     return true;
   },
 
   deleteUser: async (userId: string): Promise<boolean> => {
-      const { error } = await supabase.from('users').delete().eq('id', userId);
-      if (error) {
-          console.error("Error deleting user", error);
-          return false;
-      }
-      return true;
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (error) {
+      console.error('Error deleting user', error);
+      return false;
+    }
+    return true;
   },
 
   getUserByUsername: async (username: string): Promise<User | null> => {
@@ -89,7 +89,7 @@ export const dbService = {
     // Get both users
     const follower = await dbService.getUserById(followerId);
     const target = await dbService.getUserById(targetId);
-    
+
     if (!follower || !target) return false;
 
     const followerFollowing = follower.following || [];
@@ -101,7 +101,7 @@ export const dbService = {
         .update({ following: [...followerFollowing, targetId] })
         .eq('id', followerId);
       if (error) {
-        console.error("Error following user (following update)", error);
+        console.error('Error following user (following update)', error);
         return false;
       }
     }
@@ -111,7 +111,7 @@ export const dbService = {
         .update({ followers: [...targetFollowers, followerId] })
         .eq('id', targetId);
       if (error) {
-        console.error("Error following user (followers update)", error);
+        console.error('Error following user (followers update)', error);
         return false;
       }
     }
@@ -121,7 +121,7 @@ export const dbService = {
   unfollowUser: async (followerId: string, targetId: string): Promise<boolean> => {
     const follower = await dbService.getUserById(followerId);
     const target = await dbService.getUserById(targetId);
-    
+
     if (!follower || !target) return false;
 
     const followerFollowing = (follower.following || []).filter(id => id !== targetId);
@@ -132,7 +132,7 @@ export const dbService = {
       .update({ following: followerFollowing })
       .eq('id', followerId);
     if (followerError) {
-      console.error("Error unfollowing user (following update)", followerError);
+      console.error('Error unfollowing user (following update)', followerError);
       return false;
     }
 
@@ -141,7 +141,7 @@ export const dbService = {
       .update({ followers: targetFollowers })
       .eq('id', targetId);
     if (targetError) {
-      console.error("Error unfollowing user (followers update)", targetError);
+      console.error('Error unfollowing user (followers update)', targetError);
       return false;
     }
 
@@ -153,7 +153,7 @@ export const dbService = {
     // We need to join with users, comments, and likes
     // This is a bit complex in one query without some SQL views or join logic.
     // For simplicity, we fetch raw posts and then enrich them, or better, use Supabase relational queries.
-    
+
     const { data: posts, error } = await supabase
       .from('posts')
       .select(`
@@ -216,12 +216,12 @@ export const dbService = {
   },
 
   deletePost: async (postId: string): Promise<boolean> => {
-      const { error } = await supabase.from('posts').delete().eq('id', postId);
-      if (error) {
-          console.error("Error deleting post", error);
-          return false;
-      }
-      return true;
+    const { error } = await supabase.from('posts').delete().eq('id', postId);
+    if (error) {
+      console.error('Error deleting post', error);
+      return false;
+    }
+    return true;
   },
 
   toggleLike: async (postId: string, userId: string): Promise<void> => {
@@ -239,12 +239,12 @@ export const dbService = {
 
     if (data) {
       // Unlike
-      const { error } = await supabase.from('post_likes').delete().eq('postId', postId).eq('userId', userId);
-      if (error) console.error('Error unliking post:', error);
+      const { error: deleteError } = await supabase.from('post_likes').delete().eq('postId', postId).eq('userId', userId);
+      if (deleteError) console.error('Error unliking post:', deleteError);
     } else {
       // Like
-      const { error } = await supabase.from('post_likes').insert([{ postId, userId }]);
-      if (error) console.error('Error liking post:', error);
+      const { error: insertError } = await supabase.from('post_likes').insert([{ postId, userId }]);
+      if (insertError) console.error('Error liking post:', insertError);
     }
   },
 
@@ -258,7 +258,7 @@ export const dbService = {
     }]);
     if (error) console.error('Error adding comment:', error);
   },
-  
+
   // Storage (Image Upload)
   uploadImage: async (file: File): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
