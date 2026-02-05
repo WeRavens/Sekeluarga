@@ -173,8 +173,9 @@ export const AdminDashboard: React.FC = () => {
                     </div>
 
                     {/* User List */}
-                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-colors">
-                        <table className="w-full text-left text-sm">
+                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+                        <div className="w-full overflow-x-auto">
+                            <table className="min-w-[720px] w-full text-left text-sm">
                             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                                 <tr>
                                     <th className="p-4 font-semibold text-gray-600 dark:text-gray-300">User</th>
@@ -217,7 +218,8 @@ export const AdminDashboard: React.FC = () => {
                                     </tr>
                                 ))}
                             </tbody>
-                        </table>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}
