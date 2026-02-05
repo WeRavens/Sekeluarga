@@ -85,6 +85,44 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
     }
   };
 
+  const handleSave = async () => {
+    if (!user) return;
+    await dbService.toggleSavePost(user.id, post.id);
+  };
+
+  const handleTag = async () => {
+    if (!user) return;
+    const username = prompt('Tag username:');
+    if (!username) return;
+    const target = await dbService.getUserByUsername(username);
+    if (!target) {
+      alert('User tidak ditemukan');
+      return;
+    }
+    const ok = await dbService.tagUserOnPost(post.id, target.id);
+    if (!ok) {
+      alert('Gagal menambahkan tag');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const shareData = {
+        title: 'Sekeluarga',
+        text: post.caption || 'Lihat postingan ini',
+        url: post.imageUrl,
+      };
+      if (navigator.share) {
+        await navigator.share(shareData as any);
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(post.imageUrl);
+        alert('Link disalin');
+      }
+    } catch (e) {
+      // ignore share errors
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {
       month: 'short',
@@ -123,13 +161,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
                   <Trash2 className="w-4 h-4" />
                 </button>
               )}
-              <button className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Saved">
+              <button onClick={handleSave} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Saved">
                 <Bookmark className="w-4 h-4" />
               </button>
-              <button className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Tagged">
+              <button onClick={handleTag} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Tagged">
                 <Tag className="w-4 h-4" />
               </button>
-              <button className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Share">
+              <button onClick={handleShare} className="w-full flex items-center gap-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900" title="Share">
                 <Share2 className="w-4 h-4" />
               </button>
             </div>

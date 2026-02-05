@@ -11,27 +11,36 @@ import { withCacheBuster } from '../utils/image';
 export const Profile: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+  const [taggedPosts, setTaggedPosts] = useState<Post[]>([]);
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved' | 'tagged'>('posts');
   const [isUploading, setIsUploading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [activePost, setActivePost] = useState<Post | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (user) {
-        const load = async () => {
-            // Merge DB + local
-            try {
-              const dbPosts = await dbService.getPosts();
-              const myPosts = dbPosts.filter(p => p.userId === user.id);
-              setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
-            } catch (e) {
-              const localPosts = storageService.getPosts();
-              const myPosts = localPosts.filter(p => p.userId === user.id);
-              setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
-            }
-        }
-        load();
-    }
+    if (!user) return;
+    const load = async () => {
+      try {
+        const dbPosts = await dbService.getPosts();
+        const myPosts = dbPosts.filter(p => p.userId === user.id);
+        setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+
+        const savedIds = await dbService.getSavedPostIds(user.id);
+        setSavedPosts(dbPosts.filter(p => savedIds.includes(p.id)));
+
+        const taggedIds = await dbService.getTaggedPostIds(user.id);
+        setTaggedPosts(dbPosts.filter(p => taggedIds.includes(p.id)));
+      } catch (e) {
+        const localPosts = storageService.getPosts();
+        const myPosts = localPosts.filter(p => p.userId === user.id);
+        setUserPosts(myPosts.sort((a, b) => b.createdAt - a.createdAt));
+        setSavedPosts([]);
+        setTaggedPosts([]);
+      }
+    };
+    load();
   }, [user]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,19 +142,34 @@ export const Profile: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black transition-colors">
-        <button className="flex-1 flex items-center justify-center gap-2 py-3 border-b-2 border-black dark:border-white text-xs font-semibold uppercase tracking-widest text-black dark:text-white">
+        <button
+          onClick={() => setActiveTab('posts')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 text-xs font-semibold uppercase tracking-widest ${
+            activeTab === 'posts' ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+          }`}
+        >
           <Grid className="w-4 h-4" /> Posts
         </button>
-        <button className="flex-1 flex items-center justify-center gap-2 py-3 border-b-2 border-transparent text-gray-400 text-xs font-semibold uppercase tracking-widest hover:text-gray-600 dark:hover:text-gray-300">
+        <button
+          onClick={() => setActiveTab('saved')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 text-xs font-semibold uppercase tracking-widest ${
+            activeTab === 'saved' ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+          }`}
+        >
           <Bookmark className="w-4 h-4" /> Saved
         </button>
-        <button className="flex-1 flex items-center justify-center gap-2 py-3 border-b-2 border-transparent text-gray-400 text-xs font-semibold uppercase tracking-widest hover:text-gray-600 dark:hover:text-gray-300">
+        <button
+          onClick={() => setActiveTab('tagged')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 text-xs font-semibold uppercase tracking-widest ${
+            activeTab === 'tagged' ? 'border-black dark:border-white text-black dark:text-white' : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+          }`}
+        >
           <Tag className="w-4 h-4" /> Tagged
         </button>
       </div>
 
       {/* Grid */}
-      {userPosts.length === 0 ? (
+      {activeTab === 'posts' && userPosts.length === 0 ? (
         <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
           <div className="w-16 h-16 border-2 border-black dark:border-white rounded-full flex items-center justify-center mx-auto mb-4">
              <Grid className="w-8 h-8 text-black dark:text-white" />
@@ -153,7 +177,7 @@ export const Profile: React.FC = () => {
           <h3 className="text-xl font-light mb-2 dark:text-white">Share Photos</h3>
           <p className="text-sm">When you share photos, they will appear on your profile.</p>
         </div>
-      ) : (
+      ) : activeTab === 'posts' ? (
         <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
           {userPosts.map(post => (
             <div key={post.id} className="relative aspect-square group cursor-pointer bg-gray-100">
@@ -170,6 +194,56 @@ export const Profile: React.FC = () => {
             </div>
           ))}
         </div>
+      ) : null}
+
+      {activeTab === 'saved' && (
+        savedPosts.length === 0 ? (
+          <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
+            <div className="w-16 h-16 border-2 border-black dark:border-white rounded-full flex items-center justify-center mx-auto mb-4">
+              <Bookmark className="w-8 h-8 text-black dark:text-white" />
+            </div>
+            <h3 className="text-xl font-light mb-2 dark:text-white">No Saved Posts</h3>
+            <p className="text-sm">Posts you save will appear here.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
+            {savedPosts.map(post => (
+              <div key={post.id} className="relative aspect-square group cursor-pointer bg-gray-100">
+                <img
+                  src={post.imageUrl}
+                  alt={post.caption}
+                  className="w-full h-full object-cover"
+                  onClick={() => setActivePost(post)}
+                />
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {activeTab === 'tagged' && (
+        taggedPosts.length === 0 ? (
+          <div className="py-12 text-center text-gray-500 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
+            <div className="w-16 h-16 border-2 border-black dark:border-white rounded-full flex items-center justify-center mx-auto mb-4">
+              <Tag className="w-8 h-8 text-black dark:text-white" />
+            </div>
+            <h3 className="text-xl font-light mb-2 dark:text-white">No Tagged Posts</h3>
+            <p className="text-sm">Posts where you are tagged will appear here.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-0.5 sm:gap-4 sm:p-4 bg-white dark:bg-black sm:rounded-b-2xl transition-colors">
+            {taggedPosts.map(post => (
+              <div key={post.id} className="relative aspect-square group cursor-pointer bg-gray-100">
+                <img
+                  src={post.imageUrl}
+                  alt={post.caption}
+                  className="w-full h-full object-cover"
+                  onClick={() => setActivePost(post)}
+                />
+              </div>
+            ))}
+          </div>
+        )
       )}
       <ImageLightbox src={lightboxSrc} alt="Profile image" onClose={() => setLightboxSrc(null)} />
       {activePost && (

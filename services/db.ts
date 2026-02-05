@@ -201,6 +201,74 @@ export const dbService = {
     });
   },
 
+  getSavedPostIds: async (userId: string): Promise<string[]> => {
+    const { data, error } = await supabase.from('saved_posts').select('postId').eq('userId', userId);
+    if (error) {
+      console.error('Error fetching saved posts:', error);
+      return [];
+    }
+    return (data || []).map((d: any) => d.postId);
+  },
+
+  savePost: async (userId: string, postId: string): Promise<boolean> => {
+    const { error } = await supabase.from('saved_posts').insert([{ userId, postId }]);
+    if (error) {
+      console.error('Error saving post:', error);
+      return false;
+    }
+    return true;
+  },
+
+  unsavePost: async (userId: string, postId: string): Promise<boolean> => {
+    const { error } = await supabase.from('saved_posts').delete().eq('userId', userId).eq('postId', postId);
+    if (error) {
+      console.error('Error unsaving post:', error);
+      return false;
+    }
+    return true;
+  },
+
+  toggleSavePost: async (userId: string, postId: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from('saved_posts')
+      .select('postId')
+      .eq('userId', userId)
+      .eq('postId', postId)
+      .maybeSingle();
+
+    if (data) {
+      return dbService.unsavePost(userId, postId);
+    }
+    return dbService.savePost(userId, postId);
+  },
+
+  getTaggedPostIds: async (userId: string): Promise<string[]> => {
+    const { data, error } = await supabase.from('post_tags').select('postId').eq('userId', userId);
+    if (error) {
+      console.error('Error fetching tagged posts:', error);
+      return [];
+    }
+    return (data || []).map((d: any) => d.postId);
+  },
+
+  tagUserOnPost: async (postId: string, userId: string): Promise<boolean> => {
+    const { error } = await supabase.from('post_tags').insert([{ postId, userId }]);
+    if (error) {
+      console.error('Error tagging user on post:', error);
+      return false;
+    }
+    return true;
+  },
+
+  untagUserOnPost: async (postId: string, userId: string): Promise<boolean> => {
+    const { error } = await supabase.from('post_tags').delete().eq('postId', postId).eq('userId', userId);
+    if (error) {
+      console.error('Error untagging user on post:', error);
+      return false;
+    }
+    return true;
+  },
+
   createPost: async (post: Post): Promise<boolean> => {
     // Insert Post
     const { error } = await supabase.from('posts').insert([{

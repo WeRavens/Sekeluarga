@@ -37,11 +37,29 @@ CREATE TABLE public.post_likes (
     PRIMARY KEY ("postId", "userId")
 );
 
+-- Saved Posts (Many-to-Many)
+CREATE TABLE public.saved_posts (
+    "postId" TEXT NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+    "userId" TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY ("postId", "userId")
+);
+
+-- Tagged Users on Posts (Many-to-Many)
+CREATE TABLE public.post_tags (
+    "postId" TEXT NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+    "userId" TEXT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    PRIMARY KEY ("postId", "userId")
+);
+
 -- Enable Row Level Security (RLS) - Optional for now but good practice
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.post_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.saved_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.post_tags ENABLE ROW LEVEL SECURITY;
 
 -- Allow public access for this demo (Simulating the open nature of the previous local storage)
 CREATE POLICY "Public profiles are viewable by everyone" ON public.users FOR SELECT USING (true);
@@ -61,3 +79,11 @@ CREATE POLICY "Public comments are deletable by everyone" ON public.comments FOR
 CREATE POLICY "Public likes are viewable by everyone" ON public.post_likes FOR SELECT USING (true);
 CREATE POLICY "Public likes are insertable by everyone" ON public.post_likes FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public likes are deletable by everyone" ON public.post_likes FOR DELETE USING (true);
+
+CREATE POLICY "Public saved posts are viewable by everyone" ON public.saved_posts FOR SELECT USING (true);
+CREATE POLICY "Public saved posts are insertable by everyone" ON public.saved_posts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public saved posts are deletable by everyone" ON public.saved_posts FOR DELETE USING (true);
+
+CREATE POLICY "Public post tags are viewable by everyone" ON public.post_tags FOR SELECT USING (true);
+CREATE POLICY "Public post tags are insertable by everyone" ON public.post_tags FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public post tags are deletable by everyone" ON public.post_tags FOR DELETE USING (true);
