@@ -70,12 +70,70 @@ export const dbService = {
   },
 
   deleteUser: async (userId: string): Promise<boolean> => {
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    if (error) {
-      console.error('Error deleting user', error);
+    try {
+      // 1) Fetch user's posts to remove images from storage
+      const { data: posts, error: postsError } = await supabase
+        .from('posts')
+        .select('id, imageUrl')
+        .eq('userId', userId);
+      if (postsError) {
+        console.error('Error fetching user posts before delete', postsError);
+      }
+
+      const imagePaths = (posts || [])
+        .map((p: any) => dbService.getStoragePathFromUrl(p.imageUrl))
+        .filter((p: string | null) => !!p) as string[];
+
+      if (imagePaths.length > 0) {
+        const { error: storageError } = await supabase.storage.from('images').remove(imagePaths);
+        if (storageError) {
+          console.error('Error deleting user images from storage', storageError);
+        }
+      }
+
+      // 2) Delete all related rows by user
+      const { error: commentsError } = await supabase.from('comments').delete().eq('userId', userId);
+      if (commentsError) {
+        console.error('Error deleting user comments', commentsError);
+        return false;
+      }
+
+      const { error: likesError } = await supabase.from('post_likes').delete().eq('userId', userId);
+      if (likesError) {
+        console.error('Error deleting user likes', likesError);
+        return false;
+      }
+
+      const { error: savedError } = await supabase.from('saved_posts').delete().eq('userId', userId);
+      if (savedError) {
+        console.error('Error deleting user saved posts', savedError);
+        return false;
+      }
+
+      const { error: tagsError } = await supabase.from('post_tags').delete().eq('userId', userId);
+      if (tagsError) {
+        console.error('Error deleting user tags', tagsError);
+        return false;
+      }
+
+      // 3) Delete user's posts (also removes comments/likes via FK if cascades exist)
+      const { error: deletePostsError } = await supabase.from('posts').delete().eq('userId', userId);
+      if (deletePostsError) {
+        console.error('Error deleting user posts', deletePostsError);
+        return false;
+      }
+
+      // 4) Delete the user
+      const { error } = await supabase.from('users').delete().eq('id', userId);
+      if (error) {
+        console.error('Error deleting user', error);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('Error deleting user and related data', e);
       return false;
     }
-    return true;
   },
 
   getUserByUsername: async (username: string): Promise<User | null> => {
@@ -161,11 +219,11 @@ export const dbService = {
       .select(`
         *,
         users!posts_userId_fkey (username, avatarUrl),
-        comments (
+        comments!comments_postId_fkey (
           id, text, userId, created_at,
           users:userId (username, avatarUrl)
         ),
-        post_likes (userId)
+        post_likes!post_likes_postId_fkey (userId)
       `)
       .order('created_at', { ascending: false });
 
