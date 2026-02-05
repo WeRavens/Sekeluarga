@@ -158,7 +158,7 @@ export const dbService = {
       .from('posts')
       .select(`
         *,
-        users:userId (username, avatarUrl),
+        users!posts_userId_fkey (username, avatarUrl),
         comments (
           id, text, userId, created_at,
           users:userId (username, avatarUrl)
