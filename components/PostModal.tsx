@@ -5,6 +5,7 @@ import { Post, Comment } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
+import { withCacheBuster } from '../utils/image';
 
 interface PostModalProps {
   post: Post;
@@ -67,7 +68,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
         <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <img
-              src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}`}
+              src={withCacheBuster(post.userAvatar) || `https://ui-avatars.com/api/?name=${post.username}`}
               alt={post.username}
               className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700"
             />
@@ -135,7 +136,7 @@ export const PostModal: React.FC<PostModalProps> = ({ post, relatedPosts, onClos
                 <div key={comment.id} className="flex items-start gap-2 text-sm">
                   <Link to={`/user/${comment.username}`} className="shrink-0">
                     <img
-                      src={comment.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
+                      src={withCacheBuster(comment.avatarUrl) || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
                       alt={comment.username}
                       className="w-7 h-7 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                     />

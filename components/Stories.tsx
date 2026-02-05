@@ -4,6 +4,7 @@ import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { withCacheBuster } from '../utils/image';
 import { User } from '../types';
 
 export const Stories: React.FC = () => {
@@ -35,7 +36,7 @@ export const Stories: React.FC = () => {
                          <div className="relative">
                             <div className="w-16 h-16 rounded-full p-[2px] border-2 border-gray-100 dark:border-gray-800 group-hover:border-gray-200 dark:group-hover:border-gray-700 transition-colors">
                                 <img 
-                                    src={currentUser.avatarUrl || `https://ui-avatars.com/api/?name=${currentUser.username}`} 
+                                    src={withCacheBuster(currentUser.avatarUrl) || `https://ui-avatars.com/api/?name=${currentUser.username}`} 
                                     className="w-full h-full rounded-full object-cover"
                                     alt="My Story"
                                 />
@@ -53,7 +54,7 @@ export const Stories: React.FC = () => {
                         <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 via-red-500 to-fuchsia-600 group-hover:scale-105 transition-transform duration-200">
                             <div className="w-full h-full rounded-full p-[2px] bg-white dark:bg-black">
                                 <img 
-                                    src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`} 
+                                    src={withCacheBuster(user.avatarUrl) || `https://ui-avatars.com/api/?name=${user.username}`} 
                                     className="w-full h-full rounded-full object-cover"
                                     alt={user.username}
                                 />

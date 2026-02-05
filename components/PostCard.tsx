@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
 import { ImageLightbox } from './ImageLightbox';
+import { withCacheBuster } from '../utils/image';
 
 interface PostCardProps {
   post: Post;
@@ -74,7 +75,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
       {/* Header */}
       <Link to={`/user/${post.username}`} className="p-4 flex items-center gap-3 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
         <img 
-          src={post.userAvatar || `https://ui-avatars.com/api/?name=${post.username}`} 
+          src={withCacheBuster(post.userAvatar) || `https://ui-avatars.com/api/?name=${post.username}`} 
           alt={post.username} 
           className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
         />
@@ -129,7 +130,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onUpdate }) => {
               <div key={comment.id} className="flex items-start gap-2 text-sm">
                 <Link to={`/user/${comment.username}`} className="shrink-0">
                   <img
-                    src={comment.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
+                    src={withCacheBuster(comment.avatarUrl) || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username)}`}
                     alt={comment.username}
                     className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                   />

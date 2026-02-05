@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { storageService } from '../services/storage';
 import { dbService } from '../services/db';
 import { User } from '../types';
+import { withCacheBuster } from '../utils/image';
 
 export const Suggestions: React.FC = () => {
     const { user: currentUser } = useAuth();
@@ -71,7 +72,7 @@ export const Suggestions: React.FC = () => {
                  <div className="flex items-center gap-3">
                      <Link to="/profile">
                         <img 
-                            src={currentUser.avatarUrl || `https://ui-avatars.com/api/?name=${currentUser.username}`} 
+                            src={withCacheBuster(currentUser.avatarUrl) || `https://ui-avatars.com/api/?name=${currentUser.username}`} 
                             className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                             alt={currentUser?.username}
                          />
@@ -94,7 +95,7 @@ export const Suggestions: React.FC = () => {
                      <div key={u.id} className="flex items-center justify-between">
                          <div className="flex items-center gap-3">
                              <Link to={`/user/${u.username}`}>
-                                <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${u.username}`} className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-gray-700" alt={u.username} />
+                                <img src={withCacheBuster(u.avatarUrl) || `https://ui-avatars.com/api/?name=${u.username}`} className="w-8 h-8 rounded-full object-cover border border-gray-100 dark:border-gray-700" alt={u.username} />
                              </Link>
                              <div>
                                  <Link to={`/user/${u.username}`} className="font-semibold text-sm hover:underline cursor-pointer dark:text-gray-100">{u.username}</Link>

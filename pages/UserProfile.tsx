@@ -7,6 +7,7 @@ import { User, Post } from '../types';
 import { Grid, ArrowLeft, Loader2, UserCheck, UserPlus } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { PostModal } from '../components/PostModal';
+import { withCacheBuster } from '../utils/image';
 
 export const UserProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -128,10 +129,10 @@ export const UserProfile: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sm:rounded-t-2xl transition-colors">
         <div className="flex-shrink-0">
           <img 
-            src={profileUser.avatarUrl || `https://ui-avatars.com/api/?name=${profileUser.username}`} 
+            src={withCacheBuster(profileUser.avatarUrl) || `https://ui-avatars.com/api/?name=${profileUser.username}`} 
             alt={profileUser.fullName} 
             className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 p-1 object-cover cursor-zoom-in"
-            onClick={() => setLightboxSrc(profileUser.avatarUrl || `https://ui-avatars.com/api/?name=${profileUser.username}`)}
+            onClick={() => setLightboxSrc(withCacheBuster(profileUser.avatarUrl) || `https://ui-avatars.com/api/?name=${profileUser.username}`)}
           />
         </div>
         

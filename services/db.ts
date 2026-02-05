@@ -59,7 +59,10 @@ export const dbService = {
 
   updateUser: async (user: User): Promise<boolean> => {
     const updatePayload = dbService.toDbUser(user);
-    const { error } = await supabase.from('users').update(updatePayload).eq('id', user.id);
+    const { error } = await supabase
+      .from('users')
+      .update(updatePayload)
+      .eq('id', user.id);
     if (error) {
       console.error('Error updating user', error);
       return false;
@@ -286,7 +289,8 @@ export const dbService = {
   // Storage (Image Upload)
   uploadImage: async (file: File): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const fileName = `${unique}.${fileExt}`;
     const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, PlusSquare, User, LogOut, Camera, Shield, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { withCacheBuster } from '../utils/image';
 import { useTheme } from '../context/ThemeContext';
 
 interface LayoutProps {
@@ -56,7 +57,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                  
                  <Link to="/profile" className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-200 ${getNavItemClass('/profile')}`}>
                     {user.avatarUrl ? (
-                         <img src={user.avatarUrl} className={`w-6 h-6 rounded-full ${isActive('/profile') ? 'ring-2 ring-white dark:ring-black' : ''}`} />
+                         <img src={withCacheBuster(user.avatarUrl)} className={`w-6 h-6 rounded-full ${isActive('/profile') ? 'ring-2 ring-white dark:ring-black' : ''}`} />
                     ) : (
                          <User className="w-6 h-6" />
                     )}
@@ -127,7 +128,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </Link>
         <Link to="/profile" className={`p-2.5 rounded-xl transition-all ${isActive('/profile') ? 'bg-black dark:bg-white' : ''}`}>
            {user.avatarUrl ? (
-                <img src={user.avatarUrl} className={`w-6 h-6 rounded-full ${isActive('/profile') ? 'ring-2 ring-black dark:ring-white' : ''}`} />
+                <img src={withCacheBuster(user.avatarUrl)} className={`w-6 h-6 rounded-full ${isActive('/profile') ? 'ring-2 ring-black dark:ring-white' : ''}`} />
             ) : (
                 <User className={`w-6 h-6 ${isActive('/profile') ? 'text-white dark:text-black' : 'text-gray-700 dark:text-gray-300'}`} />
             )}

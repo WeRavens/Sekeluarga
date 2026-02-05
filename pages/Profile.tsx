@@ -6,9 +6,10 @@ import { Post } from '../types';
 import { Grid, Tag, Bookmark, Edit2, Loader2, User as UserIcon } from 'lucide-react';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { PostModal } from '../components/PostModal';
+import { withCacheBuster } from '../utils/image';
 
 export const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -57,10 +58,9 @@ export const Profile: React.FC = () => {
              throw new Error("Failed to update user profile in database");
         }
 
-        // Only update local session if DB update succeeded
-        storageService.updateUser(updatedUser); 
-        
-        window.location.reload(); 
+        // Update local cache + session
+        storageService.updateUser(updatedUser);
+        await refreshUser();
 
     } catch (error) {
         console.error("Profile update failed:", error);
@@ -78,10 +78,10 @@ export const Profile: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sm:rounded-t-2xl transition-colors">
         <div className="relative group flex-shrink-0">
           <img 
-            src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`} 
+            src={withCacheBuster(user.avatarUrl) || `https://ui-avatars.com/api/?name=${user.username}`} 
             alt={user.fullName} 
             className="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-gray-200 dark:border-gray-700 p-1 object-cover cursor-zoom-in"
-            onClick={() => setLightboxSrc(user.avatarUrl || `https://ui-avatars.com/api/?name=${user.username}`)}
+            onClick={() => setLightboxSrc(withCacheBuster(user.avatarUrl) || `https://ui-avatars.com/api/?name=${user.username}`)}
           />
           <button 
              onClick={() => fileInputRef.current?.click()}

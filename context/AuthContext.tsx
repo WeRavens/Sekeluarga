@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   signup: (username: string, password: string, fullName: string) => Promise<{ ok: boolean; reason?: 'exists' | 'db' }>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -107,8 +108,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     storageService.setCurrentUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const current = storageService.getCurrentUser();
+      if (!current) return;
+      const dbUser = await dbService.getUserById(current.id);
+      const nextUser = dbUser || current;
+      setUser(nextUser);
+      storageService.setCurrentUser(nextUser);
+      storageService.updateUser(nextUser);
+    } catch (e) {
+      // ignore refresh errors
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, refreshUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
